@@ -8,6 +8,7 @@ import (
 )
 
 var c *cert.Config
+var dir string
 
 func init() {
 	c = cert.New()
@@ -17,11 +18,18 @@ func init() {
 	flag.BoolVar(&c.IsCA, "isCa", c.IsCA, "is CA certificate")
 	flag.IntVar(&c.RsaBits, "bits", c.RsaBits, "rsa bits")
 	flag.StringVar(&c.EcdsaCurve, "ecdsaCurve", c.EcdsaCurve, "eliptic curve algorithm: supported values P224,P256,P384,P521 or empty to use rsa")
+	flag.StringVar(&dir, "dir", "", "if specified generate cert.pem and key.pem in specified dir instead writing it to stdout")
 	flag.Parse()
 }
 
 func main() {
-	if err := c.Generate(os.Stdout, os.Stdout); err != nil {
+	var err error
+	if len(dir) > 0 {
+		err = c.GenerateFiles(dir)
+	} else {
+		err = c.Generate(os.Stdout, os.Stdout)
+	}
+	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}

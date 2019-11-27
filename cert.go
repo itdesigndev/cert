@@ -72,7 +72,8 @@ func New() *Config {
 	}
 }
 
-func (c *Config) Generate(private io.Writer, public io.Writer) (err error) {
+// Generate generates certificate and key with specified config
+func (c *Config) Generate(cert io.Writer, key io.Writer) (err error) {
 
 	var priv interface{}
 
@@ -112,8 +113,6 @@ func (c *Config) Generate(private io.Writer, public io.Writer) (err error) {
 		return
 	}
 
-	fmt.Printf("%#v\n", notBefore.String())
-
 	template := x509.Certificate{
 		SerialNumber:          serialNumber,
 		Subject:               c.Subject,
@@ -144,7 +143,7 @@ func (c *Config) Generate(private io.Writer, public io.Writer) (err error) {
 	}
 
 	// generate public key
-	if err = pem.Encode(public, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+	if err = pem.Encode(key, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
 		return
 	}
 
@@ -154,9 +153,21 @@ func (c *Config) Generate(private io.Writer, public io.Writer) (err error) {
 		return
 	}
 
-	if err = pem.Encode(private, block); err != nil {
+	if err = pem.Encode(cert, block); err != nil {
 		return
 	}
 
+	return
+}
+
+// GenerateFiles generate certificate and key and writes it to specified dir in files cert.pem and key.pem
+func (c *Config) GenerateFiles(dir string) (err error) {
+	certFile := dir + string(os.PathSeparator) + "cert.pem"
+	keyFile := dir + string(os.PathSeparator) + "key.pem"
+	cert, err := os.OpenFile(certFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	defer cert.Close()
+	key, err := os.OpenFile(keyFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	defer key.Close()
+	err = c.Generate(cert, key)
 	return
 }
